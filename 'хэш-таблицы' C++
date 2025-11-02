@@ -1,0 +1,92 @@
+#include <iostream>
+#include <vector>
+#include <list>
+#include <functional>
+using namespace std;
+
+template<typename K, typename V>
+class HashTable {
+private:
+    struct Entry {
+        K key;
+        V value;
+        Entry(const K& k, const V& v) : key(k), value(v) {}
+    };
+    
+    vector<list<Entry>> table;
+    size_t capacity;
+    size_t size;
+    double loadFactor;
+    
+    size_t hash(const K& key) const {
+        return hash<K>{}(key) % capacity;
+    }
+    
+    void resize() {
+        size_t newCapacity = capacity * 2;
+        vector<list<Entry>> newTable(newCapacity);
+        
+        for (auto& bucket : table) {
+            for (auto& entry : bucket) {
+                size_t newIndex = hash<K>{}(entry.key) % newCapacity;
+                newTable[newIndex].push_back(entry);
+            }
+        }
+        
+        table = move(newTable);
+        capacity = newCapacity;
+    }
+    
+public:
+    HashTable(size_t cap = 16, double lf = 0.75) 
+        : capacity(cap), size(0), loadFactor(lf) {
+        table.resize(capacity);
+    }
+    
+    void put(const K& key, const V& value) {
+        if (size >= capacity * loadFactor) {
+            resize();
+        }
+        
+        size_t index = hash(key);
+        
+        for (auto& entry : table[index]) {
+            if (entry.key == key) {
+                entry.value = value;
+                return;
+            }
+        }
+        
+        table[index].emplace_back(key, value);
+        size++;
+    }
+    
+    V* get(const K& key) {
+        size_t index = hash(key);
+        
+        for (auto& entry : table[index]) {
+            if (entry.key == key) {
+                return &entry.value;
+            }
+        }
+        
+        return nullptr;
+    }
+    
+    bool remove(const K& key) {
+        size_t index = hash(key);
+        
+        for (auto it = table[index].begin(); it != table[index].end(); ++it) {
+            if (it->key == key) {
+                table[index].erase(it);
+                size--;
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    size_t getSize() const { return size; }
+    size_t getCapacity() const { return capacity; }
+};
