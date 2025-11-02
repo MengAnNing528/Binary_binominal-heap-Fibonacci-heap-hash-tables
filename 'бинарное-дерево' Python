@@ -26,11 +26,94 @@ def get_min(self):
 def is_empty(self):
   return len(self.heap) == 0
 
-//куча Фибоначчи
-def fibonacci_for_loop(n):
-  a, b = 0, 1
-  for _ in range(n):
-    print(a, end=' ')
-    a, b = b, a + b
-# Пример использования: fibonacci_for_loop(10)
-
+//реализация классом
+class BinomialHeap:
+    class Node:
+        def __init__(self, key):
+            self.key = key
+            self.degree = 0
+            self.parent = None
+            self.child = None
+            self.sibling = None
+    
+    def __init__(self):
+        self.head = None
+    
+    def merge(self, h1, h2):
+        if not h1: return h2
+        if not h2: return h1
+        
+        if h1.degree <= h2.degree:
+            result = h1
+            h1 = h1.sibling
+        else:
+            result = h2
+            h2 = h2.sibling
+        
+        current = result
+        while h1 and h2:
+            if h1.degree <= h2.degree:
+                current.sibling = h1
+                h1 = h1.sibling
+            else:
+                current.sibling = h2
+                h2 = h2.sibling
+            current = current.sibling
+        
+        current.sibling = h1 if h1 else h2
+        return result
+    
+    def link(self, y, z):
+        y.parent = z
+        y.sibling = z.child
+        z.child = y
+        z.degree += 1
+    
+    def union(self, h2):
+        new_heap = BinomialHeap()
+        new_heap.head = self.merge(self.head, h2.head)
+        
+        if not new_heap.head:
+            return new_heap
+        
+        prev = None
+        x = new_heap.head
+        next = x.sibling
+        
+        while next:
+            if (x.degree != next.degree or 
+                (next.sibling and next.sibling.degree == x.degree)):
+                prev = x
+                x = next
+            elif x.key <= next.key:
+                x.sibling = next.sibling
+                self.link(next, x)
+            else:
+                if not prev:
+                    new_heap.head = next
+                else:
+                    prev.sibling = next
+                self.link(x, next)
+                x = next
+            next = x.sibling
+        
+        return new_heap
+    
+    def insert(self, key):
+        new_heap = BinomialHeap()
+        new_heap.head = self.Node(key)
+        self.head = self.union(new_heap).head
+    
+    def find_min(self):
+        if not self.head:
+            return None
+        
+        min_node = self.head
+        current = self.head.sibling
+        
+        while current:
+            if current.key < min_node.key:
+                min_node = current
+            current = current.sibling
+        
+        return min_node.key
