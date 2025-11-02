@@ -1,0 +1,112 @@
+#include <iostream>
+using namespace std;
+
+class BinomialHeap {
+private:
+    struct Node {
+        int key;
+        int degree;
+        Node* parent;
+        Node* child;
+        Node* sibling;
+        
+        Node(int k) : key(k), degree(0), parent(nullptr), 
+                     child(nullptr), sibling(nullptr) {}
+    };
+    
+    Node* head;
+    
+    Node* merge(Node* h1, Node* h2) {
+        if (!h1) return h2;
+        if (!h2) return h1;
+        
+        Node* result;
+        if (h1->degree <= h2->degree) {
+            result = h1;
+            h1 = h1->sibling;
+        } else {
+            result = h2;
+            h2 = h2->sibling;
+        }
+        
+        Node* current = result;
+        while (h1 && h2) {
+            if (h1->degree <= h2->degree) {
+                current->sibling = h1;
+                h1 = h1->sibling;
+            } else {
+                current->sibling = h2;
+                h2 = h2->sibling;
+            }
+            current = current->sibling;
+        }
+        
+        current->sibling = h1 ? h1 : h2;
+        return result;
+    }
+    
+    void link(Node* y, Node* z) {
+        y->parent = z;
+        y->sibling = z->child;
+        z->child = y;
+        z->degree++;
+    }
+    
+public:
+    BinomialHeap() : head(nullptr) {}
+    
+    void insert(int key) {
+        BinomialHeap newHeap;
+        newHeap.head = new Node(key);
+        head = unionHeaps(newHeap).head;
+    }
+    
+    int findMin() {
+        if (!head) return -1;
+        
+        Node* minNode = head;
+        Node* current = head->sibling;
+        
+        while (current) {
+            if (current->key < minNode->key) {
+                minNode = current;
+            }
+            current = current->sibling;
+        }
+        
+        return minNode->key;
+    }
+    
+    BinomialHeap unionHeaps(BinomialHeap& h2) {
+        BinomialHeap newHeap;
+        newHeap.head = merge(this->head, h2.head);
+        
+        if (!newHeap.head) return newHeap;
+        
+        Node* prev = nullptr;
+        Node* x = newHeap.head;
+        Node* next = x->sibling;
+        
+        while (next) {
+            if (x->degree != next->degree || 
+                (next->sibling && next->sibling->degree == x->degree)) {
+                prev = x;
+                x = next;
+            } else if (x->key <= next->key) {
+                x->sibling = next->sibling;
+                link(next, x);
+            } else {
+                if (!prev) {
+                    newHeap.head = next;
+                } else {
+                    prev->sibling = next;
+                }
+                link(x, next);
+                x = next;
+            }
+            next = x->sibling;
+        }
+        
+        return newHeap;
+    }
+};
