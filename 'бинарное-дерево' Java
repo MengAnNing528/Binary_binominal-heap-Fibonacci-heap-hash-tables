@@ -1,0 +1,113 @@
+import java.util.*;
+
+public class BinomialHeap {
+    private Node head;
+    
+    private class Node {
+        int key;
+        int degree;
+        Node parent;
+        Node child;
+        Node sibling;
+        
+        Node(int key) {
+            this.key = key;
+            this.degree = 0;
+        }
+    }
+    
+    public BinomialHeap() {
+        head = null;
+    }
+    
+    public void insert(int key) {
+        BinomialHeap newHeap = new BinomialHeap();
+        newHeap.head = new Node(key);
+        head = union(newHeap).head;
+    }
+    
+    public Integer findMin() {
+        if (head == null) return null;
+        
+        Node minNode = head;
+        Node current = head.sibling;
+        
+        while (current != null) {
+            if (current.key < minNode.key) {
+                minNode = current;
+            }
+            current = current.sibling;
+        }
+        
+        return minNode.key;
+    }
+    
+    private Node merge(Node h1, Node h2) {
+        if (h1 == null) return h2;
+        if (h2 == null) return h1;
+        
+        Node result;
+        if (h1.degree <= h2.degree) {
+            result = h1;
+            h1 = h1.sibling;
+        } else {
+            result = h2;
+            h2 = h2.sibling;
+        }
+        
+        Node current = result;
+        while (h1 != null && h2 != null) {
+            if (h1.degree <= h2.degree) {
+                current.sibling = h1;
+                h1 = h1.sibling;
+            } else {
+                current.sibling = h2;
+                h2 = h2.sibling;
+            }
+            current = current.sibling;
+        }
+        
+        current.sibling = (h1 != null) ? h1 : h2;
+        return result;
+    }
+    
+    private void link(Node y, Node z) {
+        y.parent = z;
+        y.sibling = z.child;
+        z.child = y;
+        z.degree++;
+    }
+    
+    public BinomialHeap union(BinomialHeap h2) {
+        BinomialHeap newHeap = new BinomialHeap();
+        newHeap.head = merge(this.head, h2.head);
+        
+        if (newHeap.head == null) return newHeap;
+        
+        Node prev = null;
+        Node x = newHeap.head;
+        Node next = x.sibling;
+        
+        while (next != null) {
+            if (x.degree != next.degree || 
+                (next.sibling != null && next.sibling.degree == x.degree)) {
+                prev = x;
+                x = next;
+            } else if (x.key <= next.key) {
+                x.sibling = next.sibling;
+                link(next, x);
+            } else {
+                if (prev == null) {
+                    newHeap.head = next;
+                } else {
+                    prev.sibling = next;
+                }
+                link(x, next);
+                x = next;
+            }
+            next = x.sibling;
+        }
+        
+        return newHeap;
+    }
+}
